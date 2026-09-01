@@ -12,10 +12,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Mis Finanzas",
   },
-  icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
-  },
+  // Los iconos de pestaña / home-screen los resuelve Next por convención:
+  // src/app/icon.png y src/app/apple-icon.png.
+  //
   // Next 15 emite "mobile-web-app-capable"; iOS Safari también necesita
   // el meta con prefijo apple para abrir en modo standalone (sin barra del navegador).
   other: {

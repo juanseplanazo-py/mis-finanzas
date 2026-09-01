@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import BottomNav from "./BottomNav";
+import BrandLoader from "./BrandLoader";
 
 type Estado = "verificando" | "con-sesion" | "sin-sesion";
 
@@ -49,7 +50,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   if (estado === "verificando") {
-    return <p className="mt-10 text-center text-sm text-gray-500">Cargando…</p>;
+    return <BrandLoader />;
   }
 
   if (estado === "sin-sesion") {
