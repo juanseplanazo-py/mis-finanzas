@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen antialiased">
-        <div className="mx-auto w-full max-w-xl px-4 pt-6 pb-28">
+        <div className="mx-auto w-full max-w-xl px-4 pt-6 pb-36">
           <AuthGate>{children}</AuthGate>
         </div>
         <ServiceWorkerRegister />
