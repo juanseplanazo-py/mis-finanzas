@@ -16,6 +16,11 @@ export const metadata: Metadata = {
     icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
   },
+  // Next 15 emite "mobile-web-app-capable"; iOS Safari también necesita
+  // el meta con prefijo apple para abrir en modo standalone (sin barra del navegador).
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
