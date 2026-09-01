@@ -46,19 +46,20 @@ create index if not exists movimientos_fecha_idx
 create index if not exists movimientos_periodo_idx
   on public.movimientos (periodo_id);
 
--- Uso personal de un solo usuario con la anon/publishable key.
--- RLS activado + política permisiva (ajustar si más adelante se agrega auth).
+-- App personal de un solo usuario protegida con Supabase Auth.
+-- RLS: solo el rol `authenticated` accede. El rol anónimo (publishable key
+-- sola, sin sesión) no puede leer ni escribir nada.
 alter table public.periodos enable row level security;
-drop policy if exists "acceso_total_anon" on public.periodos;
-create policy "acceso_total_anon" on public.periodos
-  for all to anon using (true) with check (true);
+drop policy if exists "acceso_autenticado" on public.periodos;
+create policy "acceso_autenticado" on public.periodos
+  for all to authenticated using (true) with check (true);
 
 alter table public.movimientos enable row level security;
-drop policy if exists "acceso_total_anon" on public.movimientos;
-create policy "acceso_total_anon" on public.movimientos
-  for all to anon using (true) with check (true);
+drop policy if exists "acceso_autenticado" on public.movimientos;
+create policy "acceso_autenticado" on public.movimientos
+  for all to authenticated using (true) with check (true);
 
 alter table public.deudas_a_favor enable row level security;
-drop policy if exists "acceso_total_anon" on public.deudas_a_favor;
-create policy "acceso_total_anon" on public.deudas_a_favor
-  for all to anon using (true) with check (true);
+drop policy if exists "acceso_autenticado" on public.deudas_a_favor;
+create policy "acceso_autenticado" on public.deudas_a_favor
+  for all to authenticated using (true) with check (true);
