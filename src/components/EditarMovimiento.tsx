@@ -40,8 +40,8 @@ export default function EditarMovimiento({ id }: { id: string }) {
         <p className="text-sm text-red-600">
           No se encontró ese registro (puede haber sido eliminado).
         </p>
-        <Link href="/" className="text-sm font-medium text-blue-600">
-          Volver al Dashboard
+        <Link href="/gastos" className="text-sm font-medium text-blue-600">
+          Volver a Gastos
         </Link>
       </div>
     );

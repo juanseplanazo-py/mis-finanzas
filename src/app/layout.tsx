@@ -5,7 +5,7 @@ import AuthGate from "@/components/AuthGate";
 
 export const metadata: Metadata = {
   title: "Mis Finanzas",
-  description: "Dashboard y registro de movimientos financieros personales",
+  description: "App personal de finanzas: presupuesto, tarjetas, ahorros y deudas a favor",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen antialiased">
-        <div className="mx-auto w-full max-w-3xl px-4 py-6 pb-24">
+        <div className="mx-auto w-full max-w-xl px-4 pt-6 pb-28">
           <AuthGate>{children}</AuthGate>
         </div>
         <ServiceWorkerRegister />

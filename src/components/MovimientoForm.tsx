@@ -135,7 +135,7 @@ export default function MovimientoForm({
       } else {
         if (!periodo) {
           setError(
-            "No hay un período activo. Creá uno en el Dashboard antes de agregar ítems.",
+            "No hay un período activo. Creá uno en Inicio antes de agregar ítems.",
           );
           setGuardando(false);
           return;
@@ -145,7 +145,7 @@ export default function MovimientoForm({
       }
       setOk(true);
       setTimeout(() => {
-        router.push("/");
+        router.push("/gastos");
         router.refresh();
       }, 700);
     } catch {
@@ -161,8 +161,8 @@ export default function MovimientoForm({
   if (periodoEstado === "sin-periodo") {
     return (
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        No hay un período activo. Abrí el Dashboard y creá un período (o ejecutá
-        la migración de Supabase) antes de agregar ítems.
+        No hay un período activo. Abrí Inicio y creá un período (o ejecutá la
+        migración de Supabase) antes de agregar ítems.
       </p>
     );
   }

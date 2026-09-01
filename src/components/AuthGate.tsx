@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import BottomNav from "./BottomNav";
+import { PeriodoProvider } from "@/lib/periodo-context";
+import AppChrome from "./AppChrome";
 import BrandLoader from "./BrandLoader";
 
 type Estado = "verificando" | "con-sesion" | "sin-sesion";
@@ -58,9 +59,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <PeriodoProvider>
       {children}
-      <BottomNav />
-    </>
+      <AppChrome />
+    </PeriodoProvider>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import EditarMovimiento from "@/components/EditarMovimiento";
 
 export default async function EditarMovimientoPage({
@@ -9,16 +10,18 @@ export default async function EditarMovimientoPage({
   const { id } = await params;
 
   return (
-    <main className="mx-auto max-w-md">
-      <header className="mb-6 flex items-center gap-3">
+    <main>
+      <header className="mb-6 flex items-center gap-2">
         <Link
-          href="/"
-          aria-label="Volver al Dashboard"
-          className="text-2xl leading-none text-gray-500"
+          href="/gastos"
+          aria-label="Volver a Gastos"
+          className="-ml-1 rounded-lg p-1 text-slate-500 active:bg-slate-100"
         >
-          &larr;
+          <ArrowLeft className="h-6 w-6" aria-hidden="true" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Editar ítem</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Editar ítem
+        </h1>
       </header>
 
       <EditarMovimiento id={id} />
