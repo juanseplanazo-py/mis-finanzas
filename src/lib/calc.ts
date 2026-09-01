@@ -86,3 +86,8 @@ export function totalMeDeben(
     deudas.filter((d) => d.estado === "pendiente").map((d) => d.monto),
   );
 }
+
+/** SUMA de los montos de un detalle de gastos. */
+export function sumaDetalles(detalles: { monto: number }[]): number {
+  return suma(detalles.map((d) => d.monto));
+}

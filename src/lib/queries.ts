@@ -4,6 +4,8 @@ import type {
   NuevoPeriodo,
   Movimiento,
   NuevoMovimiento,
+  MovimientoDetalle,
+  NuevoMovimientoDetalle,
   DeudaAFavor,
   NuevaDeudaAFavor,
   Ahorro,
@@ -83,9 +85,16 @@ export type CamposMovimiento = Pick<
   | "fecha"
 >;
 
-export async function insertMovimiento(mov: NuevoMovimiento): Promise<void> {
-  const { error } = await supabase.from("movimientos").insert(mov);
+export async function insertMovimiento(
+  mov: NuevoMovimiento,
+): Promise<Movimiento> {
+  const { data, error } = await supabase
+    .from("movimientos")
+    .insert(mov)
+    .select()
+    .single();
   if (error) throw error;
+  return data as Movimiento;
 }
 
 /** Actualiza la MISMA fila. No crea una nueva. No toca periodo_id. */
@@ -102,6 +111,81 @@ export async function updateMovimiento(
 
 export async function deleteMovimiento(id: string): Promise<void> {
   const { error } = await supabase.from("movimientos").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ===== Detalle de gastos (movimiento_detalles) ===========================
+
+export async function fetchDetalles(
+  movimientoId: string,
+): Promise<MovimientoDetalle[]> {
+  const { data, error } = await supabase
+    .from("movimiento_detalles")
+    .select("*")
+    .eq("movimiento_id", movimientoId)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+  if (error) throw error;
+  return (data as MovimientoDetalle[]) ?? [];
+}
+
+export async function insertDetalle(d: NuevoMovimientoDetalle): Promise<void> {
+  const { error } = await supabase.from("movimiento_detalles").insert(d);
+  if (error) throw error;
+}
+
+export type CamposDetalle = Pick<
+  MovimientoDetalle,
+  "concepto" | "monto" | "fecha"
+>;
+
+export async function updateDetalle(
+  id: string,
+  campos: CamposDetalle,
+): Promise<void> {
+  const { error } = await supabase
+    .from("movimiento_detalles")
+    .update(campos)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteDetalle(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("movimiento_detalles")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/**
+ * Activa/desactiva el modo detallado de un movimiento.
+ * Al activar, `pagado` pasa a `nuevoPagado` (= suma de detalles) — decisión explícita.
+ * Al desactivar, `pagado` queda como está (se pasa el valor actual).
+ */
+export async function setUsarDetalles(
+  movimientoId: string,
+  usar: boolean,
+  pagado: number,
+  sobrante: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("movimientos")
+    .update({ usar_detalles: usar, pagado, sobrante })
+    .eq("id", movimientoId);
+  if (error) throw error;
+}
+
+/** Escribe pagado/sobrante derivados (para movimientos con usar_detalles=true). */
+export async function guardarPagadoDerivado(
+  movimientoId: string,
+  pagado: number,
+  sobrante: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("movimientos")
+    .update({ pagado, sobrante })
+    .eq("id", movimientoId);
   if (error) throw error;
 }
 

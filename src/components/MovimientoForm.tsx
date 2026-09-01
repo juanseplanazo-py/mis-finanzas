@@ -7,6 +7,7 @@ import {
   fetchPeriodos,
   insertMovimiento,
   updateMovimiento,
+  setUsarDetalles,
 } from "@/lib/queries";
 import { resolverSeleccionado } from "@/lib/periodos";
 import type { Movimiento, NuevoMovimiento, Periodo } from "@/lib/types";
@@ -34,11 +35,19 @@ function opciones(lista: readonly string[], actual: string): string[] {
 
 export default function MovimientoForm({
   movimiento,
+  modoDetalle = false,
 }: {
   movimiento?: Movimiento;
+  /** Alta de "gasto detallado": Pagado arranca derivado del detalle (0). */
+  modoDetalle?: boolean;
 }) {
   const router = useRouter();
   const editando = Boolean(movimiento);
+
+  // Pagado no editable cuando: alta detallada, o edición de un movimiento derivado.
+  const detalleNuevo = !editando && modoDetalle;
+  const pagadoBloqueado =
+    detalleNuevo || (editando && Boolean(movimiento?.usar_detalles));
 
   const [periodo, setPeriodo] = useState<Periodo | null>(null);
   const [periodoEstado, setPeriodoEstado] = useState<
@@ -132,6 +141,11 @@ export default function MovimientoForm({
     try {
       if (editando && movimiento) {
         await updateMovimiento(movimiento.id, campos);
+        setOk(true);
+        setTimeout(() => {
+          router.push(`/gastos/${movimiento.id}`);
+          router.refresh();
+        }, 700);
       } else {
         if (!periodo) {
           setError(
@@ -140,14 +154,32 @@ export default function MovimientoForm({
           setGuardando(false);
           return;
         }
-        const nuevo: NuevoMovimiento = { periodo_id: periodo.id, ...campos };
-        await insertMovimiento(nuevo);
+
+        if (detalleNuevo) {
+          // Gasto detallado: pagado arranca en 0 y usar_detalles = true.
+          const nuevo: NuevoMovimiento = {
+            periodo_id: periodo.id,
+            ...campos,
+            pagado: 0,
+            sobrante: inicialNum,
+          };
+          const row = await insertMovimiento(nuevo);
+          await setUsarDetalles(row.id, true, 0, inicialNum);
+          setOk(true);
+          setTimeout(() => {
+            router.push(`/gastos/${row.id}`);
+            router.refresh();
+          }, 700);
+        } else {
+          const nuevo: NuevoMovimiento = { periodo_id: periodo.id, ...campos };
+          await insertMovimiento(nuevo);
+          setOk(true);
+          setTimeout(() => {
+            router.push("/gastos");
+            router.refresh();
+          }, 700);
+        }
       }
-      setOk(true);
-      setTimeout(() => {
-        router.push("/gastos");
-        router.refresh();
-      }, 700);
     } catch {
       setError("No se pudo guardar. Intentá de nuevo.");
       setGuardando(false);
@@ -277,12 +309,20 @@ export default function MovimientoForm({
             id="pagado"
             type="text"
             inputMode="numeric"
-            className={`${fieldClass} pl-12`}
+            readOnly={pagadoBloqueado}
+            className={`${fieldClass} pl-12 ${
+              pagadoBloqueado ? "bg-gray-100 text-gray-500" : ""
+            }`}
             value={formatMontoInput(pagado)}
-            onChange={(e) => setPagado(e.target.value)}
+            onChange={(e) => !pagadoBloqueado && setPagado(e.target.value)}
             placeholder="0"
           />
         </div>
+        {pagadoBloqueado && (
+          <p className="mt-1 text-xs text-gray-400">
+            Se calcula automáticamente desde el detalle de gastos.
+          </p>
+        )}
       </div>
 
       <div>
