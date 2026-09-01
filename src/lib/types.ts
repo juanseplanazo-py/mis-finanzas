@@ -21,11 +21,33 @@ export interface Movimiento {
   sobrante: number;
   metodo_pago: string;
   fecha: string | null; // ISO date "YYYY-MM-DD" o null (gasto previsto sin fecha)
+  /** Si true, `pagado` se deriva de la suma de movimiento_detalles (opt-in). */
+  usar_detalles: boolean;
   created_at: string;
 }
 
 // Datos que el usuario carga en el formulario + el período asociado.
-export type NuevoMovimiento = Omit<Movimiento, "id" | "created_at">;
+// `usar_detalles` no se toca desde el form de alta (default false en la DB).
+export type NuevoMovimiento = Omit<
+  Movimiento,
+  "id" | "created_at" | "usar_detalles"
+>;
+
+// --- Detalle opcional de un movimiento (desglose de gastos) ----------------
+export interface MovimientoDetalle {
+  id: string;
+  movimiento_id: string;
+  concepto: string;
+  monto: number;
+  fecha: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type NuevoMovimientoDetalle = Pick<
+  MovimientoDetalle,
+  "movimiento_id" | "concepto" | "monto" | "fecha"
+>;
 
 export type EstadoDeuda = "pendiente" | "pagado";
 
