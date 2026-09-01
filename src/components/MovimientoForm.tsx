@@ -1,16 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseConfigured } from "@/lib/supabase";
 import {
-  fetchPeriodos,
   insertMovimiento,
   updateMovimiento,
   setUsarDetalles,
 } from "@/lib/queries";
-import { resolverSeleccionado } from "@/lib/periodos";
-import type { Movimiento, NuevoMovimiento, Periodo } from "@/lib/types";
+import { usePeriodo } from "@/lib/periodo-context";
+import type { Movimiento, NuevoMovimiento } from "@/lib/types";
 import {
   RAZONES,
   CATEGORIAS,
@@ -24,11 +22,11 @@ import {
   hoyISO,
 } from "@/lib/format";
 
-const labelClass = "block text-sm font-medium text-gray-700 mb-1";
+const labelClass = "block text-sm font-medium text-slate-700 mb-1";
 const fieldClass =
-  "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
+  "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
 
-/** Incluye el valor actual como opción aunque no esté en la lista base (datos viejos / import). */
+/** Incluye el valor actual como opción aunque no esté en la lista base. */
 function opciones(lista: readonly string[], actual: string): string[] {
   return lista.includes(actual) ? [...lista] : [actual, ...lista];
 }
@@ -42,17 +40,17 @@ export default function MovimientoForm({
   modoDetalle?: boolean;
 }) {
   const router = useRouter();
+  const { estado, periodo: periodoSel, periodos, recargarMovimientos } =
+    usePeriodo();
   const editando = Boolean(movimiento);
 
-  // Pagado no editable cuando: alta detallada, o edición de un movimiento derivado.
+  const periodo = editando
+    ? (periodos.find((p) => p.id === movimiento?.periodo_id) ?? null)
+    : periodoSel;
+
   const detalleNuevo = !editando && modoDetalle;
   const pagadoBloqueado =
     detalleNuevo || (editando && Boolean(movimiento?.usar_detalles));
-
-  const [periodo, setPeriodo] = useState<Periodo | null>(null);
-  const [periodoEstado, setPeriodoEstado] = useState<
-    "cargando" | "listo" | "sin-periodo"
-  >(editando ? "listo" : "cargando");
 
   const [razon, setRazon] = useState(movimiento?.razon ?? RAZONES[0]);
   const [concepto, setConcepto] = useState(movimiento?.concepto ?? "");
@@ -79,39 +77,6 @@ export default function MovimientoForm({
   const [guardando, setGuardando] = useState(false);
   const [ok, setOk] = useState(false);
 
-  useEffect(() => {
-    let activo = true;
-    if (!supabaseConfigured) {
-      setPeriodoEstado(editando ? "listo" : "sin-periodo");
-      return;
-    }
-    fetchPeriodos()
-      .then((lista) => {
-        if (!activo) return;
-        if (editando) {
-          setPeriodo(
-            lista.find((p) => p.id === movimiento?.periodo_id) ?? null,
-          );
-          setPeriodoEstado("listo");
-        } else {
-          const sel = resolverSeleccionado(lista);
-          if (sel) {
-            setPeriodo(sel);
-            setPeriodoEstado("listo");
-          } else {
-            setPeriodoEstado("sin-periodo");
-          }
-        }
-      })
-      .catch(() => {
-        if (!activo) return;
-        setPeriodoEstado(editando ? "listo" : "sin-periodo");
-      });
-    return () => {
-      activo = false;
-    };
-  }, [editando, movimiento]);
-
   const inicialNum = parseMonto(inicial);
   const pagadoNum = parseMonto(pagado);
   const sobrante = useMemo(() => inicialNum - pagadoNum, [inicialNum, pagadoNum]);
@@ -131,32 +96,27 @@ export default function MovimientoForm({
       categoria,
       subcategoria,
       inicial: inicialNum,
-      pagado: pagadoNum, // Pagado = 0 es válido (gasto previsto sin pagar).
+      pagado: pagadoNum,
       sobrante,
       metodo_pago: metodoPago,
-      fecha: fecha || null, // La fecha es opcional (el Excel la tiene vacía).
+      fecha: fecha || null,
     };
 
     setGuardando(true);
     try {
       if (editando && movimiento) {
         await updateMovimiento(movimiento.id, campos);
+        await recargarMovimientos();
         setOk(true);
-        setTimeout(() => {
-          router.push(`/gastos/${movimiento.id}`);
-          router.refresh();
-        }, 700);
+        setTimeout(() => router.push(`/gastos/${movimiento.id}`), 600);
       } else {
         if (!periodo) {
-          setError(
-            "No hay un período activo. Creá uno en Inicio antes de agregar ítems.",
-          );
+          setError("No hay un período activo. Creá uno en Inicio.");
           setGuardando(false);
           return;
         }
 
         if (detalleNuevo) {
-          // Gasto detallado: pagado arranca en 0 y usar_detalles = true.
           const nuevo: NuevoMovimiento = {
             periodo_id: periodo.id,
             ...campos,
@@ -165,19 +125,15 @@ export default function MovimientoForm({
           };
           const row = await insertMovimiento(nuevo);
           await setUsarDetalles(row.id, true, 0, inicialNum);
+          await recargarMovimientos();
           setOk(true);
-          setTimeout(() => {
-            router.push(`/gastos/${row.id}`);
-            router.refresh();
-          }, 700);
+          setTimeout(() => router.push(`/gastos/${row.id}`), 600);
         } else {
           const nuevo: NuevoMovimiento = { periodo_id: periodo.id, ...campos };
           await insertMovimiento(nuevo);
+          await recargarMovimientos();
           setOk(true);
-          setTimeout(() => {
-            router.push("/gastos");
-            router.refresh();
-          }, 700);
+          setTimeout(() => router.push("/gastos"), 600);
         }
       }
     } catch {
@@ -186,15 +142,15 @@ export default function MovimientoForm({
     }
   }
 
-  if (periodoEstado === "cargando") {
-    return <p className="text-sm text-gray-500">Cargando…</p>;
+  if (!editando && estado === "cargando") {
+    return <p className="text-sm text-slate-500">Cargando…</p>;
   }
 
-  if (periodoEstado === "sin-periodo") {
+  if (!editando && !periodo) {
     return (
       <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-        No hay un período activo. Abrí Inicio y creá un período (o ejecutá la
-        migración de Supabase) antes de agregar ítems.
+        No hay un período activo. Abrí Inicio y creá un período antes de agregar
+        ítems.
       </p>
     );
   }
@@ -202,9 +158,9 @@ export default function MovimientoForm({
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       {periodo && (
-        <p className="rounded-xl bg-gray-100 px-4 py-2 text-sm text-gray-600">
+        <p className="rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-600">
           Período:{" "}
-          <span className="font-medium text-gray-900">{periodo.nombre}</span>
+          <span className="font-medium text-slate-900">{periodo.nombre}</span>
         </p>
       )}
 
@@ -282,7 +238,7 @@ export default function MovimientoForm({
           Inicial
         </label>
         <div className="relative">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-gray-500">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-500">
             Gs.
           </span>
           <input
@@ -302,7 +258,7 @@ export default function MovimientoForm({
           Pagado
         </label>
         <div className="relative">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-gray-500">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-slate-500">
             Gs.
           </span>
           <input
@@ -311,7 +267,7 @@ export default function MovimientoForm({
             inputMode="numeric"
             readOnly={pagadoBloqueado}
             className={`${fieldClass} pl-12 ${
-              pagadoBloqueado ? "bg-gray-100 text-gray-500" : ""
+              pagadoBloqueado ? "bg-slate-100 text-slate-500" : ""
             }`}
             value={formatMontoInput(pagado)}
             onChange={(e) => !pagadoBloqueado && setPagado(e.target.value)}
@@ -319,7 +275,7 @@ export default function MovimientoForm({
           />
         </div>
         {pagadoBloqueado && (
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-slate-400">
             Se calcula automáticamente desde el detalle de gastos.
           </p>
         )}
@@ -345,7 +301,7 @@ export default function MovimientoForm({
 
       <div>
         <label className={labelClass} htmlFor="fecha">
-          Fecha <span className="font-normal text-gray-400">(opcional)</span>
+          Fecha <span className="font-normal text-slate-400">(opcional)</span>
         </label>
         <input
           id="fecha"
@@ -365,11 +321,11 @@ export default function MovimientoForm({
         )}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <span className="text-sm font-medium text-gray-700">Sobrante</span>
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <span className="text-sm font-medium text-slate-700">Sobrante</span>
         <p
-          className={`mt-1 text-xl font-semibold ${
-            sobrante < 0 ? "text-red-600" : "text-gray-900"
+          className={`mt-1 text-xl font-semibold tabular-nums ${
+            sobrante < 0 ? "text-red-600" : "text-slate-900"
           }`}
         >
           {formatGuaranies(sobrante)}
@@ -380,7 +336,7 @@ export default function MovimientoForm({
 
       {ok && (
         <p className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-          {editando ? "Cambios guardados ✓" : "Ítem guardado ✓"}
+          {editando ? "Cambios guardados ✓" : "Guardado ✓"}
         </p>
       )}
 
