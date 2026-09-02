@@ -1,7 +1,14 @@
 # Mis Finanzas
 
 App web mobile-first: una versión simple del Excel `Registro2.xlsx` en formato app.
-Dos vistas conectadas: **Dashboard / Registro** y **Agregar movimiento**.
+
+**Navegación (bottom nav):** Inicio · Gastos · Tarjetas · Ahorros · Me deben. Botón flotante
+`+` para alta rápida. Rutas: `/`, `/gastos`, `/gastos/[id]`, `/tarjetas`, `/ahorros`,
+`/me-deben`, `/nuevo`, `/editar/[id]`, `/login`.
+
+Los datos del período (movimientos) los comparte un contexto (`src/lib/periodo-context.tsx`)
+entre Inicio y Gastos. Los gastos pueden llevar un **detalle opcional** (`movimiento_detalles`):
+al activarlo, el Pagado se calcula como la suma del desglose.
 
 ## Stack
 
@@ -19,7 +26,8 @@ sin sesión → redirige a `/login`. RLS en Supabase: solo el rol `authenticated
 Configuración en Supabase (una sola vez):
 1. Authentication → Providers → **Email**: activado. **"Allow new users to sign up"**: OFF.
 2. Authentication → Users → **Add user** → tu email + contraseña.
-3. SQL Editor → ejecutar `supabase/migration_004_rls_auth.sql`.
+3. SQL Editor → ejecutar en orden las migraciones de `supabase/` que falten
+   (`migration_002` … `migration_005`).
 
 ## Ejecutar en local
 
