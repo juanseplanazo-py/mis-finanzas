@@ -1,10 +1,14 @@
-import MeDebenBloque from "@/components/MeDebenBloque";
+import MeDebenVista from "@/components/MeDebenVista";
 
-// ETAPA 1: reusa el bloque existente en su propia ruta. Se rediseña en ETAPA 7.
-export default function MeDebenPage() {
+export default async function MeDebenPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ nuevo?: string }>;
+}) {
+  const { nuevo } = await searchParams;
   return (
     <main>
-      <MeDebenBloque />
+      <MeDebenVista autoNuevo={nuevo === "1"} />
     </main>
   );
 }

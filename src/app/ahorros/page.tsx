@@ -1,10 +1,14 @@
-import AhorrosBloque from "@/components/AhorrosBloque";
+import AhorrosVista from "@/components/AhorrosVista";
 
-// ETAPA 1: reusa el bloque existente en su propia ruta. Se rediseña en ETAPA 6.
-export default function AhorrosPage() {
+export default async function AhorrosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ nuevo?: string }>;
+}) {
+  const { nuevo } = await searchParams;
   return (
     <main>
-      <AhorrosBloque />
+      <AhorrosVista autoNuevo={nuevo === "1"} />
     </main>
   );
 }
