@@ -37,7 +37,7 @@ export default function BottomNav() {
               <Link
                 href={href}
                 aria-current={activa ? "page" : undefined}
-                className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium ${
+                className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium leading-none whitespace-nowrap ${
                   activa ? "text-blue-600" : "text-slate-400"
                 }`}
               >

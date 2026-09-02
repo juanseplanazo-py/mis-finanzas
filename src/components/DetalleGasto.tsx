@@ -136,13 +136,13 @@ export default function DetalleGasto({ id }: { id: string }) {
         ].map((c) => (
           <div
             key={c.label}
-            className="rounded-2xl border border-slate-200 bg-white p-3"
+            className="rounded-2xl border border-slate-200 bg-white p-2.5"
           >
-            <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
               {c.label}
             </p>
             <p
-              className={`mt-1 text-sm font-semibold tabular-nums ${
+              className={`mt-1 text-[13px] font-semibold tabular-nums ${
                 c.label === "Disponible" && c.value < 0
                   ? "text-red-600"
                   : "text-slate-900"

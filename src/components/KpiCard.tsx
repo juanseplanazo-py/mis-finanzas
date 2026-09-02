@@ -18,7 +18,7 @@ export default function KpiCard({
       <MoneyValue
         value={value}
         tono={tono}
-        className="mt-1 block text-xl font-semibold"
+        className="mt-1 block text-lg font-semibold"
       />
     </div>
   );

@@ -19,7 +19,7 @@ export default async function EditarMovimientoPage({
         >
           <ArrowLeft className="h-6 w-6" aria-hidden="true" />
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">
           Editar ítem
         </h1>
       </header>
