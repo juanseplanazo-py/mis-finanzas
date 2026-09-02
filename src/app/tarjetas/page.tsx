@@ -1,10 +1,14 @@
-import TarjetasBloque from "@/components/TarjetasBloque";
+import TarjetasVista from "@/components/TarjetasVista";
 
-// ETAPA 1: reusa el bloque existente en su propia ruta. Se rediseña en ETAPA 5.
-export default function TarjetasPage() {
+export default async function TarjetasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ nueva?: string }>;
+}) {
+  const { nueva } = await searchParams;
   return (
     <main>
-      <TarjetasBloque />
+      <TarjetasVista autoNueva={nueva === "1"} />
     </main>
   );
 }
