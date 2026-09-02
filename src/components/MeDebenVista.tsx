@@ -10,8 +10,9 @@ import {
   deleteDeuda,
 } from "@/lib/queries";
 import { totalMeDeben } from "@/lib/calc";
-import { formatGuaranies, parseMonto } from "@/lib/format";
+import { parseMonto } from "@/lib/format";
 import PageHeader from "./PageHeader";
+import Money from "./Money";
 import BottomSheet from "./BottomSheet";
 import ConfirmDialog from "./ConfirmDialog";
 import EmptyState from "./EmptyState";
@@ -185,9 +186,10 @@ export default function MeDebenVista({
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Total pendiente
           </p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-            {formatGuaranies(totalMeDeben(deudas))}
-          </p>
+          <Money
+            value={totalMeDeben(deudas)}
+            className="mt-1 block text-2xl font-bold"
+          />
         </div>
       )}
 
@@ -215,9 +217,7 @@ export default function MeDebenVista({
                 {d.concepto && (
                   <p className="truncate text-sm text-slate-500">{d.concepto}</p>
                 )}
-                <p className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatGuaranies(d.monto)}
-                </p>
+                <Money value={d.monto} className="block text-base font-semibold" />
                 <span
                   className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                     d.estado === "pendiente"

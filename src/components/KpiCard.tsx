@@ -1,4 +1,4 @@
-import MoneyValue from "./MoneyValue";
+import Money from "./Money";
 
 /** Card de KPI: etiqueta chica arriba, valor monetario grande abajo. */
 export default function KpiCard({
@@ -15,7 +15,7 @@ export default function KpiCard({
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
         {label}
       </p>
-      <MoneyValue
+      <Money
         value={value}
         tono={tono}
         className="mt-1 block text-lg font-semibold"

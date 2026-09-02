@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Search, ChevronRight } from "lucide-react";
 import type { Movimiento } from "@/lib/types";
-import { formatGuaranies, formatFecha } from "@/lib/format";
+import { formatFecha } from "@/lib/format";
 import { StatusDot } from "./StatusBadge";
 import ProgressBar from "./ProgressBar";
 import EmptyState from "./EmptyState";
+import Money from "./Money";
 
 type Filtro = "todos" | "Fijo" | "Variable" | "Ahorro" | "Deuda";
 
@@ -54,13 +55,11 @@ function GastoItem({ m }: { m: Movimiento }) {
         <div className="flex shrink-0 items-center gap-1">
           <div className="text-right text-sm">
             <p className="text-xs text-slate-400">Sobrante</p>
-            <p
-              className={`font-semibold tabular-nums ${
-                m.sobrante < 0 ? "text-red-600" : "text-slate-900"
-              }`}
-            >
-              {formatGuaranies(m.sobrante)}
-            </p>
+            <Money
+              value={m.sobrante}
+              tono={m.sobrante < 0 ? "negativo" : "neutro"}
+              className="block font-semibold"
+            />
           </div>
           <ChevronRight className="h-4 w-4 text-slate-300" aria-hidden="true" />
         </div>
@@ -70,7 +69,8 @@ function GastoItem({ m }: { m: Movimiento }) {
         <ProgressBar pagado={m.pagado} inicial={m.inicial} className="mt-3" />
       ) : (
         <p className="mt-2 text-xs text-slate-400">
-          Sin presupuesto · Pagado {formatGuaranies(m.pagado)}
+          Sin presupuesto · Pagado{" "}
+          <Money value={m.pagado} tono="tenue" className="text-xs" />
         </p>
       )}
     </Link>
@@ -171,9 +171,11 @@ export default function GastosLista({
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
                 {g.cat} · {g.items.length}
               </h2>
-              <span className="text-xs text-slate-400 tabular-nums">
-                {formatGuaranies(g.presupuestado)}
-              </span>
+              <Money
+                value={g.presupuestado}
+                tono="tenue"
+                className="text-xs"
+              />
             </div>
             <ul className="space-y-2">
               {g.items.map((m) => (

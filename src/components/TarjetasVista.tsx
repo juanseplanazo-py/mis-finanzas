@@ -25,8 +25,9 @@ import {
   deleteTarjetaMovimiento,
 } from "@/lib/queries";
 import { deudaTarjeta, disponibleTarjeta } from "@/lib/calc";
-import { formatGuaranies, parseMonto } from "@/lib/format";
+import { parseMonto } from "@/lib/format";
 import PageHeader from "./PageHeader";
+import Money from "./Money";
 import BottomSheet from "./BottomSheet";
 import ConfirmDialog from "./ConfirmDialog";
 import EmptyState from "./EmptyState";
@@ -242,21 +243,17 @@ function TarjetaCard({
           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Deuda
           </p>
-          <p className="mt-0.5 text-base font-semibold tabular-nums text-slate-900">
-            {formatGuaranies(deuda)}
-          </p>
+          <Money value={deuda} className="mt-0.5 block text-base font-semibold" />
         </div>
         <div className="rounded-xl bg-slate-50 p-3">
           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
             Disponible
           </p>
-          <p
-            className={`mt-0.5 text-base font-semibold tabular-nums ${
-              disponible < 0 ? "text-red-600" : "text-green-600"
-            }`}
-          >
-            {formatGuaranies(disponible)}
-          </p>
+          <Money
+            value={disponible}
+            tono={disponible < 0 ? "negativo" : "positivo"}
+            className="mt-0.5 block text-base font-semibold"
+          />
         </div>
       </div>
 
@@ -267,8 +264,13 @@ function TarjetaCard({
             style={{ width: `${usoPct}%` }}
           />
         </div>
-        <p className="mt-1 text-xs text-slate-400 tabular-nums">
-          Línea {formatGuaranies(tarjeta.linea_credito)}
+        <p className="mt-1 text-xs text-slate-400">
+          Línea{" "}
+          <Money
+            value={tarjeta.linea_credito}
+            tono="tenue"
+            className="text-xs"
+          />
         </p>
       </div>
 
@@ -312,9 +314,9 @@ function TarjetaCard({
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
-                    <span className="font-medium tabular-nums text-slate-900">
+                    <span className="font-medium text-slate-900">
                       {c.tipo === "descuento" ? "−" : ""}
-                      {formatGuaranies(c.monto)}
+                      <Money value={c.monto} className="font-medium" />
                     </span>
                     <button
                       type="button"
@@ -501,17 +503,20 @@ export default function TarjetasVista({
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
               Deuda total
             </p>
-            <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-900">
-              {formatGuaranies(totales.deuda)}
-            </p>
+            <Money
+              value={totales.deuda}
+              className="mt-0.5 block text-lg font-bold"
+            />
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-3">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
               Disponible total
             </p>
-            <p className="mt-0.5 text-lg font-bold tabular-nums text-green-600">
-              {formatGuaranies(totales.disponible)}
-            </p>
+            <Money
+              value={totales.disponible}
+              tono="positivo"
+              className="mt-0.5 block text-lg font-bold"
+            />
           </div>
         </div>
       )}

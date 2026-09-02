@@ -1,4 +1,4 @@
-import { formatGuaranies } from "@/lib/format";
+import Money from "./Money";
 
 /**
  * Barra Pagado / Inicial. La barra se limita a 100% pero si hay exceso
@@ -29,8 +29,9 @@ export default function ProgressBar({
         />
       </div>
       <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
-        <span className="tabular-nums">
-          {formatGuaranies(pagado)} / {formatGuaranies(inicial)}
+        <span>
+          <Money value={pagado} className="text-xs" /> /{" "}
+          <Money value={inicial} className="text-xs" />
         </span>
         <span
           className={`font-medium tabular-nums ${

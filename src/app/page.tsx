@@ -8,8 +8,9 @@ import PeriodoSelector from "@/components/PeriodoSelector";
 import RequierePeriodo from "@/components/RequierePeriodo";
 import IngresoEditable from "@/components/IngresoEditable";
 import KpiCard from "@/components/KpiCard";
-import MoneyValue from "@/components/MoneyValue";
+import Money from "@/components/Money";
 import ResumenRapido from "@/components/ResumenRapido";
+import PrivacyToggle from "@/components/PrivacyToggle";
 
 export default function InicioPage() {
   return (
@@ -21,13 +22,16 @@ export default function InicioPage() {
             Mis Finanzas
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={() => supabase.auth.signOut()}
-          className="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 active:bg-slate-100 active:text-slate-600"
-        >
-          Salir
-        </button>
+        <div className="flex items-center gap-1">
+          <PrivacyToggle />
+          <button
+            type="button"
+            onClick={() => supabase.auth.signOut()}
+            className="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 active:bg-slate-100 active:text-slate-600"
+          >
+            Salir
+          </button>
+        </div>
       </header>
 
       <RequierePeriodo>
@@ -76,7 +80,7 @@ function Contenido() {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Disponible real
           </p>
-          <MoneyValue
+          <Money
             value={r.disponibleReal}
             tono={r.disponibleReal < 0 ? "negativo" : "neutro"}
             className="mt-1 block text-2xl font-bold"

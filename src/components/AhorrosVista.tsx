@@ -10,8 +10,9 @@ import {
   deleteAhorro,
 } from "@/lib/queries";
 import { totalAhorros } from "@/lib/calc";
-import { formatGuaranies, parseMonto } from "@/lib/format";
+import { parseMonto } from "@/lib/format";
 import PageHeader from "./PageHeader";
+import Money from "./Money";
 import BottomSheet from "./BottomSheet";
 import ConfirmDialog from "./ConfirmDialog";
 import EmptyState from "./EmptyState";
@@ -144,9 +145,10 @@ export default function AhorrosVista({
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
             Total ahorros
           </p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-slate-900">
-            {formatGuaranies(totalAhorros(ahorros))}
-          </p>
+          <Money
+            value={totalAhorros(ahorros)}
+            className="mt-1 block text-2xl font-bold"
+          />
         </div>
       )}
 
@@ -171,9 +173,7 @@ export default function AhorrosVista({
                 <p className="truncate text-sm font-semibold text-slate-900">
                   {a.nombre}
                 </p>
-                <p className="text-base font-semibold tabular-nums text-slate-900">
-                  {formatGuaranies(a.saldo)}
-                </p>
+                <Money value={a.saldo} className="block text-base font-semibold" />
               </div>
             </div>
             <div className="flex shrink-0 gap-2">

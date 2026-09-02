@@ -10,7 +10,7 @@ import {
   fetchDeudas,
 } from "@/lib/queries";
 import { totalAhorros, totalMeDeben, deudaTarjeta } from "@/lib/calc";
-import { formatGuaranies } from "@/lib/format";
+import Money from "./Money";
 
 interface Totales {
   ahorros: number;
@@ -54,21 +54,21 @@ export default function ResumenRapido() {
       href: "/ahorros",
       icon: PiggyBank,
       label: "Ahorros",
-      valor: t ? formatGuaranies(t.ahorros) : "—",
+      valor: t?.ahorros ?? null,
       sub: "Total acumulado",
     },
     {
       href: "/tarjetas",
       icon: CreditCard,
       label: "Tarjetas",
-      valor: t ? formatGuaranies(t.deudaTarjetas) : "—",
+      valor: t?.deudaTarjetas ?? null,
       sub: "Deuda total",
     },
     {
       href: "/me-deben",
       icon: HandCoins,
       label: "Me deben",
-      valor: t ? formatGuaranies(t.meDeben) : "—",
+      valor: t?.meDeben ?? null,
       sub: "Pendiente",
     },
   ];
@@ -91,9 +91,11 @@ export default function ResumenRapido() {
               <span className="block text-xs text-slate-500">{sub}</span>
             </span>
             <span className="text-right">
-              <span className="block font-semibold tabular-nums text-slate-900">
-                {valor}
-              </span>
+              {valor === null ? (
+                <span className="block font-semibold text-slate-400">—</span>
+              ) : (
+                <Money value={valor} className="block font-semibold" />
+              )}
             </span>
             <ChevronRight
               className="h-4 w-4 shrink-0 text-slate-400"

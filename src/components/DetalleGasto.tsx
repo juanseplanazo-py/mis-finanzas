@@ -25,6 +25,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import BottomSheet from "./BottomSheet";
 import DetalleForm, { type DatosDetalle } from "./DetalleForm";
 import EmptyState from "./EmptyState";
+import Money from "./Money";
 
 type Sheet =
   | { modo: "nuevo" }
@@ -141,15 +142,13 @@ export default function DetalleGasto({ id }: { id: string }) {
             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
               {c.label}
             </p>
-            <p
-              className={`mt-1 text-[13px] font-semibold tabular-nums ${
-                c.label === "Disponible" && c.value < 0
-                  ? "text-red-600"
-                  : "text-slate-900"
-              }`}
-            >
-              {formatGuaranies(c.value)}
-            </p>
+            <Money
+              value={c.value}
+              tono={
+                c.label === "Disponible" && c.value < 0 ? "negativo" : "neutro"
+              }
+              className="mt-1 block text-[13px] font-semibold"
+            />
           </div>
         ))}
       </div>
@@ -182,8 +181,9 @@ export default function DetalleGasto({ id }: { id: string }) {
         ) : (
           detalles.length > 0 && (
             <p className="mb-2 text-xs text-slate-400">
-              Informativo. El Pagado ({formatGuaranies(mov.pagado)}) se edita a
-              mano.
+              Informativo. El Pagado (
+              <Money value={mov.pagado} tono="tenue" className="text-xs" />) se
+              edita a mano.
             </p>
           )
         )}
@@ -209,9 +209,7 @@ export default function DetalleGasto({ id }: { id: string }) {
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-sm font-semibold tabular-nums text-slate-900">
-                    {formatGuaranies(d.monto)}
-                  </span>
+                  <Money value={d.monto} className="text-sm font-semibold" />
                   <button
                     type="button"
                     aria-label="Editar gasto"
@@ -233,9 +231,7 @@ export default function DetalleGasto({ id }: { id: string }) {
             ))}
             <li className="flex items-center justify-between px-3 pt-1 text-sm">
               <span className="font-medium text-slate-500">Suma del detalle</span>
-              <span className="font-semibold tabular-nums text-slate-900">
-                {formatGuaranies(sumaActual)}
-              </span>
+              <Money value={sumaActual} className="text-sm font-semibold" />
             </li>
           </ul>
         )}

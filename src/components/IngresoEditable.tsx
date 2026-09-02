@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { usePeriodo } from "@/lib/periodo-context";
-import { formatGuaranies, parseMonto } from "@/lib/format";
+import { parseMonto } from "@/lib/format";
 import MontoInput from "./MontoInput";
+import Money from "./Money";
 
 /** Card del ingreso del período, editable inline. */
 export default function IngresoEditable() {
@@ -51,9 +52,10 @@ export default function IngresoEditable() {
         </div>
       ) : (
         <div className="mt-1 flex items-baseline justify-between gap-3">
-          <p className="text-2xl font-semibold tabular-nums text-slate-900">
-            {formatGuaranies(periodo.ingreso)}
-          </p>
+          <Money
+            value={periodo.ingreso}
+            className="text-2xl font-semibold"
+          />
           <button
             type="button"
             onClick={() => {

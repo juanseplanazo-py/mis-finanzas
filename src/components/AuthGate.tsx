@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { PeriodoProvider } from "@/lib/periodo-context";
+import { PrivacyProvider } from "@/lib/privacy-context";
 import AppChrome from "./AppChrome";
 import BrandLoader from "./BrandLoader";
 
@@ -59,9 +60,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <PeriodoProvider>
-      {children}
-      <AppChrome />
-    </PeriodoProvider>
+    <PrivacyProvider>
+      <PeriodoProvider>
+        {children}
+        <AppChrome />
+      </PeriodoProvider>
+    </PrivacyProvider>
   );
 }
