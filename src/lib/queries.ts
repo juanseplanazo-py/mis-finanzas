@@ -49,6 +49,16 @@ export async function insertPeriodo(p: NuevoPeriodo): Promise<Periodo> {
 }
 
 /**
+ * Elimina el período. Los movimientos asociados NO se borran (la FK es
+ * `on delete set null`): quedan con `periodo_id = null`, es decir, dejan
+ * de aparecer en cualquier período pero no se pierden en la base.
+ */
+export async function deletePeriodo(id: string): Promise<void> {
+  const { error } = await supabase.from("periodos").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/**
  * Crea un período nuevo y clona los movimientos de `periodoAnteriorId`:
  * mismo razon/concepto/categoría/subcategoría/inicial/método de pago,
  * pero pagado en 0 y fecha en null (son gastos previstos de este período,

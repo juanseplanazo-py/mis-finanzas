@@ -48,6 +48,7 @@ function Contenido() {
     movimientos,
     seleccionarPeriodo,
     registrarPeriodoNuevo,
+    eliminarPeriodo,
   } = usePeriodo();
 
   if (!periodo) return null;
@@ -62,6 +63,7 @@ function Contenido() {
         seleccionado={periodo}
         onSelect={seleccionarPeriodo}
         onCreado={registrarPeriodoNuevo}
+        onEliminado={eliminarPeriodo}
       />
 
       <div className="space-y-3">

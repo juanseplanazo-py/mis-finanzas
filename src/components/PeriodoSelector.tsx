@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import type { Periodo } from "@/lib/types";
 import {
   formatMontoInput,
@@ -22,22 +22,29 @@ export default function PeriodoSelector({
   seleccionado,
   onSelect,
   onCreado,
+  onEliminado,
 }: {
   periodos: Periodo[];
   seleccionado: Periodo;
   onSelect: (id: string) => void;
   onCreado: (periodo: Periodo) => void;
+  onEliminado: (id: string) => Promise<void>;
 }) {
   const [creando, setCreando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [confirmarDup, setConfirmarDup] = useState(false);
-  const [cantidadAnterior, setCantidadAnterior] = useState<number | null>(
-    null,
-  );
+  const [cantidadSeleccionado, setCantidadSeleccionado] = useState<
+    number | null
+  >(null);
   const [duplicando, setDuplicando] = useState(false);
   const [errorDup, setErrorDup] = useState<string | null>(null);
+
+  const [confirmarBorrar, setConfirmarBorrar] = useState(false);
+  const [cantidadBorrar, setCantidadBorrar] = useState<number | null>(null);
+  const [borrando, setBorrando] = useState(false);
+  const [errorBorrar, setErrorBorrar] = useState<string | null>(null);
 
   // Sugerencia: el período siguiente al más reciente.
   const masReciente = periodos[0];
@@ -55,32 +62,37 @@ export default function PeriodoSelector({
     masReciente ? String(masReciente.ingreso) : "",
   );
 
+  // Duplicar SIEMPRE parte del período que está seleccionado en pantalla
+  // (no del más reciente por fecha, que puede ser un período vacío recién
+  // creado a mano).
+  const inicioSugDup = sumarDiasISO(seleccionado.fecha_fin, 1);
+  const finSugDup = sumarDiasISO(sumarMesesISO(inicioSugDup, 1), -1);
+  const nombreSugDup = nombrePeriodoSugerido(inicioSugDup);
+
   async function abrirConfirmarDup() {
-    if (!masReciente) return;
     setErrorDup(null);
     setConfirmarDup(true);
-    setCantidadAnterior(null);
+    setCantidadSeleccionado(null);
     try {
-      const movs = await fetchMovimientos(masReciente.id);
-      setCantidadAnterior(movs.length);
+      const movs = await fetchMovimientos(seleccionado.id);
+      setCantidadSeleccionado(movs.length);
     } catch {
-      setErrorDup("No se pudo revisar el período anterior.");
+      setErrorDup("No se pudo revisar el período actual.");
     }
   }
 
   async function confirmarDuplicar() {
-    if (!masReciente) return;
     setDuplicando(true);
     setErrorDup(null);
     try {
       const { periodo } = await duplicarPeriodo(
         {
-          nombre: nombreSug,
-          fecha_inicio: inicioSug,
-          fecha_fin: finSug,
-          ingreso: masReciente.ingreso,
+          nombre: nombreSugDup,
+          fecha_inicio: inicioSugDup,
+          fecha_fin: finSugDup,
+          ingreso: seleccionado.ingreso,
         },
-        masReciente.id,
+        seleccionado.id,
       );
       setConfirmarDup(false);
       onCreado(periodo);
@@ -88,6 +100,31 @@ export default function PeriodoSelector({
       setErrorDup("No se pudo duplicar el período.");
     } finally {
       setDuplicando(false);
+    }
+  }
+
+  async function abrirConfirmarBorrar() {
+    setErrorBorrar(null);
+    setConfirmarBorrar(true);
+    setCantidadBorrar(null);
+    try {
+      const movs = await fetchMovimientos(seleccionado.id);
+      setCantidadBorrar(movs.length);
+    } catch {
+      setErrorBorrar("No se pudo revisar el período.");
+    }
+  }
+
+  async function confirmarEliminar() {
+    setBorrando(true);
+    setErrorBorrar(null);
+    try {
+      await onEliminado(seleccionado.id);
+      setConfirmarBorrar(false);
+    } catch {
+      setErrorBorrar("No se pudo eliminar el período.");
+    } finally {
+      setBorrando(false);
     }
   }
 
@@ -139,15 +176,27 @@ export default function PeriodoSelector({
         </button>
       </div>
 
-      {!creando && masReciente && (
-        <button
-          type="button"
-          onClick={abrirConfirmarDup}
-          className="mt-2 flex items-center gap-1.5 text-sm font-medium text-blue-600"
-        >
-          <Copy className="h-4 w-4" aria-hidden="true" />
-          Duplicar último período
-        </button>
+      {!creando && (
+        <div className="mt-2 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={abrirConfirmarDup}
+            className="flex items-center gap-1.5 text-sm font-medium text-blue-600"
+          >
+            <Copy className="h-4 w-4" aria-hidden="true" />
+            Duplicar este período
+          </button>
+          {periodos.length > 1 && (
+            <button
+              type="button"
+              onClick={abrirConfirmarBorrar}
+              className="flex items-center gap-1.5 text-sm font-medium text-red-600"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              Eliminar este período
+            </button>
+          )}
+        </div>
       )}
 
       {creando && (
@@ -221,33 +270,59 @@ export default function PeriodoSelector({
         </form>
       )}
 
-      {masReciente && (
-        <ConfirmDialog
-          open={confirmarDup}
-          title="¿Duplicar último período?"
-          tone="primary"
-          confirmLabel="Duplicar"
-          loading={duplicando}
-          description={
-            errorDup ? (
-              <span className="text-red-600">{errorDup}</span>
-            ) : (
-              <>
-                Se creará <strong>{nombreSug}</strong> ({inicioSug} al{" "}
-                {finSug}) con el mismo ingreso (
-                <Money value={masReciente.ingreso} />) y{" "}
-                {cantidadAnterior === null
-                  ? "los gastos de"
-                  : `los ${cantidadAnterior} gasto(s) presupuestado(s) de`}{" "}
-                {masReciente.nombre}, todos con pagado en 0. No se modifica el
-                período anterior.
-              </>
-            )
-          }
-          onCancel={() => setConfirmarDup(false)}
-          onConfirm={confirmarDuplicar}
-        />
-      )}
+      <ConfirmDialog
+        open={confirmarDup}
+        title="¿Duplicar este período?"
+        tone="primary"
+        confirmLabel="Duplicar"
+        loading={duplicando}
+        description={
+          errorDup ? (
+            <span className="text-red-600">{errorDup}</span>
+          ) : (
+            <>
+              Se creará <strong>{nombreSugDup}</strong> ({inicioSugDup} al{" "}
+              {finSugDup}) con el mismo ingreso (
+              <Money value={seleccionado.ingreso} />) y{" "}
+              {cantidadSeleccionado === null
+                ? "los gastos de"
+                : `los ${cantidadSeleccionado} gasto(s) presupuestado(s) de`}{" "}
+              {seleccionado.nombre}, todos con pagado en 0. No se modifica
+              este período.
+            </>
+          )
+        }
+        onCancel={() => setConfirmarDup(false)}
+        onConfirm={confirmarDuplicar}
+      />
+
+      <ConfirmDialog
+        open={confirmarBorrar}
+        title="¿Eliminar este período?"
+        tone="danger"
+        confirmLabel="Eliminar"
+        loading={borrando}
+        description={
+          errorBorrar ? (
+            <span className="text-red-600">{errorBorrar}</span>
+          ) : cantidadBorrar === 0 ? (
+            <>
+              Se eliminará <strong>{seleccionado.nombre}</strong>. No tiene
+              gastos cargados.
+            </>
+          ) : (
+            <>
+              <strong>{seleccionado.nombre}</strong> tiene{" "}
+              {cantidadBorrar === null ? "…" : cantidadBorrar} gasto(s)
+              cargado(s). Al eliminar el período, esos gastos no se borran
+              pero quedan sin período asociado (dejan de aparecer en
+              cualquier vista).
+            </>
+          )
+        }
+        onCancel={() => setConfirmarBorrar(false)}
+        onConfirm={confirmarEliminar}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   fetchMovimientos,
   updateIngreso,
   deleteMovimiento,
+  deletePeriodo,
 } from "./queries";
 import { resolverSeleccionado, setPeriodoGuardado } from "./periodos";
 import { supabaseConfigured } from "./supabase";
@@ -34,6 +35,7 @@ interface PeriodoCtx {
   cambiarIngreso: (ingreso: number) => Promise<void>;
   recargarMovimientos: () => Promise<void>;
   eliminarMovimiento: (id: string) => Promise<void>;
+  eliminarPeriodo: (id: string) => Promise<void>;
 }
 
 const Ctx = createContext<PeriodoCtx | null>(null);
@@ -138,6 +140,25 @@ export function PeriodoProvider({ children }: { children: React.ReactNode }) {
     [periodo, cargarMovs],
   );
 
+  const eliminarPeriodo = useCallback(
+    async (id: string) => {
+      await deletePeriodo(id);
+      const restantes = periodos.filter((p) => p.id !== id);
+      setPeriodos(restantes);
+      if (periodo?.id === id) {
+        const siguiente = restantes[0];
+        if (siguiente) {
+          await aplicar(siguiente);
+        } else {
+          setPeriodo(null);
+          setMovimientos([]);
+          setEstado("migracion-pendiente");
+        }
+      }
+    },
+    [periodo, periodos, aplicar],
+  );
+
   return (
     <Ctx.Provider
       value={{
@@ -150,6 +171,7 @@ export function PeriodoProvider({ children }: { children: React.ReactNode }) {
         cambiarIngreso,
         recargarMovimientos,
         eliminarMovimiento: eliminarMov,
+        eliminarPeriodo,
       }}
     >
       {children}
