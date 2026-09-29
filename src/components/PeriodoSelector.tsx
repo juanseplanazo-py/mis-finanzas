@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Copy } from "lucide-react";
 import type { Periodo } from "@/lib/types";
 import {
   formatMontoInput,
@@ -9,7 +10,9 @@ import {
   sumarMesesISO,
   nombrePeriodoSugerido,
 } from "@/lib/format";
-import { insertPeriodo } from "@/lib/queries";
+import { insertPeriodo, duplicarPeriodo, fetchMovimientos } from "@/lib/queries";
+import ConfirmDialog from "./ConfirmDialog";
+import Money from "./Money";
 
 const fieldClass =
   "w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600";
@@ -29,6 +32,13 @@ export default function PeriodoSelector({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [confirmarDup, setConfirmarDup] = useState(false);
+  const [cantidadAnterior, setCantidadAnterior] = useState<number | null>(
+    null,
+  );
+  const [duplicando, setDuplicando] = useState(false);
+  const [errorDup, setErrorDup] = useState<string | null>(null);
+
   // Sugerencia: el período siguiente al más reciente.
   const masReciente = periodos[0];
   const inicioSug = masReciente
@@ -36,13 +46,50 @@ export default function PeriodoSelector({
     : new Date().toISOString().slice(0, 10);
   // Un mes después del inicio, menos un día (mismo patrón 25 -> 24 del Excel).
   const finSug = sumarDiasISO(sumarMesesISO(inicioSug, 1), -1);
+  const nombreSug = nombrePeriodoSugerido(inicioSug);
 
-  const [nombre, setNombre] = useState(nombrePeriodoSugerido(inicioSug));
+  const [nombre, setNombre] = useState(nombreSug);
   const [inicio, setInicio] = useState(inicioSug);
   const [fin, setFin] = useState(finSug);
   const [ingreso, setIngreso] = useState(
     masReciente ? String(masReciente.ingreso) : "",
   );
+
+  async function abrirConfirmarDup() {
+    if (!masReciente) return;
+    setErrorDup(null);
+    setConfirmarDup(true);
+    setCantidadAnterior(null);
+    try {
+      const movs = await fetchMovimientos(masReciente.id);
+      setCantidadAnterior(movs.length);
+    } catch {
+      setErrorDup("No se pudo revisar el período anterior.");
+    }
+  }
+
+  async function confirmarDuplicar() {
+    if (!masReciente) return;
+    setDuplicando(true);
+    setErrorDup(null);
+    try {
+      const { periodo } = await duplicarPeriodo(
+        {
+          nombre: nombreSug,
+          fecha_inicio: inicioSug,
+          fecha_fin: finSug,
+          ingreso: masReciente.ingreso,
+        },
+        masReciente.id,
+      );
+      setConfirmarDup(false);
+      onCreado(periodo);
+    } catch {
+      setErrorDup("No se pudo duplicar el período.");
+    } finally {
+      setDuplicando(false);
+    }
+  }
 
   async function crear(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +138,17 @@ export default function PeriodoSelector({
           {creando ? "Cancelar" : "+ Período"}
         </button>
       </div>
+
+      {!creando && masReciente && (
+        <button
+          type="button"
+          onClick={abrirConfirmarDup}
+          className="mt-2 flex items-center gap-1.5 text-sm font-medium text-blue-600"
+        >
+          <Copy className="h-4 w-4" aria-hidden="true" />
+          Duplicar último período
+        </button>
+      )}
 
       {creando && (
         <form
@@ -161,6 +219,34 @@ export default function PeriodoSelector({
             {guardando ? "Creando…" : "Crear período"}
           </button>
         </form>
+      )}
+
+      {masReciente && (
+        <ConfirmDialog
+          open={confirmarDup}
+          title="¿Duplicar último período?"
+          tone="primary"
+          confirmLabel="Duplicar"
+          loading={duplicando}
+          description={
+            errorDup ? (
+              <span className="text-red-600">{errorDup}</span>
+            ) : (
+              <>
+                Se creará <strong>{nombreSug}</strong> ({inicioSug} al{" "}
+                {finSug}) con el mismo ingreso (
+                <Money value={masReciente.ingreso} />) y{" "}
+                {cantidadAnterior === null
+                  ? "los gastos de"
+                  : `los ${cantidadAnterior} gasto(s) presupuestado(s) de`}{" "}
+                {masReciente.nombre}, todos con pagado en 0. No se modifica el
+                período anterior.
+              </>
+            )
+          }
+          onCancel={() => setConfirmarDup(false)}
+          onConfirm={confirmarDuplicar}
+        />
       )}
     </div>
   );

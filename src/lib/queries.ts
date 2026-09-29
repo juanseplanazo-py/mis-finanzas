@@ -48,6 +48,39 @@ export async function insertPeriodo(p: NuevoPeriodo): Promise<Periodo> {
   return data as Periodo;
 }
 
+/**
+ * Crea un período nuevo y clona los movimientos de `periodoAnteriorId`:
+ * mismo razon/concepto/categoría/subcategoría/inicial/método de pago,
+ * pero pagado en 0 y fecha en null (son gastos previstos de este período,
+ * todavía no pagados). No modifica el período anterior.
+ */
+export async function duplicarPeriodo(
+  nuevo: NuevoPeriodo,
+  periodoAnteriorId: string,
+): Promise<{ periodo: Periodo; cantidad: number }> {
+  const periodo = await insertPeriodo(nuevo);
+  const anteriores = await fetchMovimientos(periodoAnteriorId);
+  if (anteriores.length === 0) return { periodo, cantidad: 0 };
+
+  const clones: NuevoMovimiento[] = anteriores.map((m) => ({
+    periodo_id: periodo.id,
+    razon: m.razon,
+    concepto: m.concepto,
+    categoria: m.categoria,
+    subcategoria: m.subcategoria,
+    inicial: m.inicial,
+    pagado: 0,
+    sobrante: m.inicial,
+    metodo_pago: m.metodo_pago,
+    fecha: null,
+  }));
+
+  const { error } = await supabase.from("movimientos").insert(clones);
+  if (error) throw error;
+
+  return { periodo, cantidad: clones.length };
+}
+
 // ===== Movimientos ========================================================
 
 export async function fetchMovimientos(periodoId: string): Promise<Movimiento[]> {
