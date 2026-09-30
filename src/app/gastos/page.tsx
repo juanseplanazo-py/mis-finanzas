@@ -38,7 +38,7 @@ function Contenido() {
         onCreado={registrarPeriodoNuevo}
         onEliminado={eliminarPeriodo}
       />
-      <GastosLista movimientos={movimientos} />
+      <GastosLista movimientos={movimientos} periodoId={periodo.id} />
     </div>
   );
 }

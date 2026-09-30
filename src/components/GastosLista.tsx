@@ -2,7 +2,22 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { Movimiento } from "@/lib/types";
 import { formatFecha } from "@/lib/format";
 import { StatusDot } from "./StatusBadge";
@@ -34,56 +49,205 @@ function coincide(m: Movimiento, q: string): boolean {
   );
 }
 
-function GastoItem({ m }: { m: Movimiento }) {
-  return (
-    <Link
-      href={`/gastos/${m.id}`}
-      className="block rounded-2xl border border-slate-200 bg-white p-4 active:bg-slate-50"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-            <StatusDot mov={m} />
-            {m.razon}
-          </p>
-          <p className="truncate text-sm text-slate-500">{m.concepto}</p>
-          <p className="mt-0.5 text-xs text-slate-400">
-            {m.subcategoria}
-            {m.fecha ? ` · ${formatFecha(m.fecha)}` : ""}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <div className="text-right text-sm">
-            <p className="text-xs text-slate-400">Sobrante</p>
-            <Money
-              value={m.sobrante}
-              tono={m.sobrante < 0 ? "negativo" : "neutro"}
-              className="block font-semibold"
-            />
-          </div>
-          <ChevronRight className="h-4 w-4 text-slate-300" aria-hidden="true" />
-        </div>
-      </div>
+// --- Orden manual por categoría, guardado en este dispositivo -------------
 
-      {m.inicial > 0 ? (
-        <ProgressBar pagado={m.pagado} inicial={m.inicial} className="mt-3" />
-      ) : (
-        <p className="mt-2 text-xs text-slate-400">
-          Sin presupuesto · Pagado{" "}
-          <Money value={m.pagado} tono="tenue" className="text-xs" />
-        </p>
-      )}
-    </Link>
+function claveOrden(periodoId: string, categoria: string): string {
+  return `mf_orden_${periodoId}_${categoria}`;
+}
+
+function leerOrden(clave: string): string[] {
+  try {
+    const raw = localStorage.getItem(clave);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function guardarOrden(clave: string, ids: string[]) {
+  try {
+    localStorage.setItem(clave, JSON.stringify(ids));
+  } catch {}
+}
+
+/** Aplica el orden manual guardado; los ítems nuevos van al final. */
+function aplicarOrden(items: Movimiento[], clave: string): Movimiento[] {
+  const guardado = leerOrden(clave);
+  if (guardado.length === 0) return items;
+  const porId = new Map(items.map((m) => [m.id, m]));
+  const ordenados: Movimiento[] = [];
+  for (const id of guardado) {
+    const m = porId.get(id);
+    if (m) {
+      ordenados.push(m);
+      porId.delete(id);
+    }
+  }
+  for (const m of items) if (porId.has(m.id)) ordenados.push(m);
+  return ordenados;
+}
+
+function GastoItem({
+  m,
+  handle,
+}: {
+  m: Movimiento;
+  handle?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-stretch gap-0 rounded-2xl border border-slate-200 bg-white">
+      <Link
+        href={`/gastos/${m.id}`}
+        className={`block flex-1 p-4 active:bg-slate-50 ${
+          handle ? "rounded-l-2xl" : "rounded-2xl"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <StatusDot mov={m} />
+              {m.razon}
+            </p>
+            <p className="truncate text-sm text-slate-500">{m.concepto}</p>
+            <p className="mt-0.5 text-xs text-slate-400">
+              {m.subcategoria}
+              {m.fecha ? ` · ${formatFecha(m.fecha)}` : ""}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <div className="text-right text-sm">
+              <p className="text-xs text-slate-400">Sobrante</p>
+              <Money
+                value={m.sobrante}
+                tono={m.sobrante < 0 ? "negativo" : "neutro"}
+                className="block font-semibold"
+              />
+            </div>
+            <ChevronRight className="h-4 w-4 text-slate-300" aria-hidden="true" />
+          </div>
+        </div>
+
+        {m.inicial > 0 ? (
+          <ProgressBar pagado={m.pagado} inicial={m.inicial} className="mt-3" />
+        ) : (
+          <p className="mt-2 text-xs text-slate-400">
+            Sin presupuesto · Pagado{" "}
+            <Money value={m.pagado} tono="tenue" className="text-xs" />
+          </p>
+        )}
+      </Link>
+      {handle}
+    </div>
+  );
+}
+
+function GastoItemOrdenable({ m }: { m: Movimiento }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: m.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.6 : 1,
+      }}
+    >
+      <GastoItem
+        m={m}
+        handle={
+          <button
+            type="button"
+            aria-label="Reordenar"
+            className="flex w-9 shrink-0 touch-none select-none items-center justify-center rounded-r-2xl text-slate-300 active:bg-slate-100 active:text-slate-500"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="h-4 w-4" aria-hidden="true" />
+          </button>
+        }
+      />
+    </div>
+  );
+}
+
+function CategoriaLista({
+  items,
+  periodoId,
+  categoria,
+  ordenable,
+  onReordenado,
+}: {
+  items: Movimiento[];
+  periodoId: string;
+  categoria: string;
+  ordenable: boolean;
+  onReordenado: () => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
+  );
+
+  if (!ordenable) {
+    return (
+      <ul className="space-y-2">
+        {items.map((m) => (
+          <li key={m.id}>
+            <GastoItem m={m} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  function onDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const desde = items.findIndex((m) => m.id === active.id);
+    const hasta = items.findIndex((m) => m.id === over.id);
+    if (desde === -1 || hasta === -1) return;
+    const nuevo = arrayMove(items, desde, hasta);
+    guardarOrden(
+      claveOrden(periodoId, categoria),
+      nuevo.map((m) => m.id),
+    );
+    onReordenado();
+  }
+
+  return (
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      <SortableContext
+        items={items.map((m) => m.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <ul className="space-y-2">
+          {items.map((m) => (
+            <li key={m.id}>
+              <GastoItemOrdenable m={m} />
+            </li>
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
   );
 }
 
 export default function GastosLista({
   movimientos,
+  periodoId,
 }: {
   movimientos: Movimiento[];
+  periodoId: string;
 }) {
   const [q, setQ] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [ordenTick, setOrdenTick] = useState(0);
+
+  const buscando = q.trim() !== "";
 
   const grupos = useMemo(() => {
     const filtrados = movimientos.filter(
@@ -105,14 +269,17 @@ export default function GastosLista({
     });
 
     return claves.map((cat) => {
-      const items = porCat.get(cat)!;
+      const itemsBase = porCat.get(cat)!;
+      const items = buscando
+        ? itemsBase
+        : aplicarOrden(itemsBase, claveOrden(periodoId, cat));
       return {
         cat,
         items,
-        presupuestado: items.reduce((s, m) => s + m.inicial, 0),
+        presupuestado: itemsBase.reduce((s, m) => s + m.inicial, 0),
       };
     });
-  }, [movimientos, q, filtro]);
+  }, [movimientos, q, filtro, periodoId, buscando, ordenTick]);
 
   const total = grupos.reduce((s, g) => s + g.items.length, 0);
 
@@ -177,13 +344,13 @@ export default function GastosLista({
                 className="text-xs"
               />
             </div>
-            <ul className="space-y-2">
-              {g.items.map((m) => (
-                <li key={m.id}>
-                  <GastoItem m={m} />
-                </li>
-              ))}
-            </ul>
+            <CategoriaLista
+              items={g.items}
+              periodoId={periodoId}
+              categoria={g.cat}
+              ordenable={!buscando}
+              onReordenado={() => setOrdenTick((t) => t + 1)}
+            />
           </section>
         ))
       )}
