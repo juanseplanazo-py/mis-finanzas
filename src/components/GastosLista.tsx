@@ -279,6 +279,8 @@ export default function GastosLista({
         presupuestado: itemsBase.reduce((s, m) => s + m.inicial, 0),
       };
     });
+    // ordenTick fuerza releer el orden guardado en localStorage tras arrastrar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movimientos, q, filtro, periodoId, buscando, ordenTick]);
 
   const total = grupos.reduce((s, g) => s + g.items.length, 0);

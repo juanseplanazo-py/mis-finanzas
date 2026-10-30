@@ -2,12 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HandCoins, Plus, Pencil, Trash2 } from "lucide-react";
-import type { DeudaAFavor, EstadoDeuda } from "@/lib/types";
+import type { DeudaMia, EstadoDeuda } from "@/lib/types";
 import {
   fetchDeudas,
   insertDeuda,
   updateDeuda,
   deleteDeuda,
+  fetchDeudasMias,
+  insertDeudaMia,
+  updateDeudaMia,
+  deleteDeudaMia,
 } from "@/lib/queries";
 import { totalMeDeben } from "@/lib/calc";
 import { parseMonto } from "@/lib/format";
@@ -28,12 +32,48 @@ interface Datos {
   estado: EstadoDeuda;
 }
 
+export type LadoDeuda = "me-deben" | "yo-debo";
+
+/** Textos y operaciones de cada lado (misma pantalla, dos tablas). */
+const CONFIG = {
+  "me-deben": {
+    titulo: "Me deben",
+    totalLabel: "Total pendiente",
+    personaLabel: "Persona",
+    personaPlaceholder: "Pablo",
+    sheetNuevo: "Nueva deuda a favor",
+    vacioTitulo: "No hay deudas pendientes",
+    errorCarga: "No se pudieron cargar las deudas a favor.",
+    fetch: fetchDeudas,
+    insert: insertDeuda,
+    update: updateDeuda,
+    remove: deleteDeuda,
+  },
+  "yo-debo": {
+    titulo: "Yo debo",
+    totalLabel: "Total que debo",
+    personaLabel: "A quién le debo",
+    personaPlaceholder: "Pablo",
+    sheetNuevo: "Nueva deuda mía",
+    vacioTitulo: "No debés nada por ahora",
+    errorCarga: "No se pudieron cargar tus deudas.",
+    fetch: fetchDeudasMias,
+    insert: insertDeudaMia,
+    update: updateDeudaMia,
+    remove: deleteDeudaMia,
+  },
+} as const;
+
 function DeudaForm({
   inicial,
+  personaLabel,
+  personaPlaceholder,
   onGuardar,
   onCancelar,
 }: {
-  inicial?: Partial<DeudaAFavor>;
+  inicial?: Partial<DeudaMia>;
+  personaLabel: string;
+  personaPlaceholder: string;
   onGuardar: (d: Datos) => Promise<void>;
   onCancelar: () => void;
 }) {
@@ -70,13 +110,13 @@ function DeudaForm({
     >
       <div>
         <label className="mb-1 block text-sm font-medium text-slate-700">
-          Persona
+          {personaLabel}
         </label>
         <input
           className={inputClass}
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
-          placeholder="Pablo"
+          placeholder={personaPlaceholder}
           autoFocus
         />
       </div>
@@ -132,28 +172,34 @@ function DeudaForm({
 }
 
 export default function MeDebenVista({
+  lado = "me-deben",
   autoNuevo = false,
+  selector,
 }: {
+  lado?: LadoDeuda;
   autoNuevo?: boolean;
+  /** Selector (Me deben | Yo debo) que se muestra bajo el encabezado. */
+  selector?: React.ReactNode;
 }) {
-  const [deudas, setDeudas] = useState<DeudaAFavor[]>([]);
+  const cfg = CONFIG[lado];
+  const [deudas, setDeudas] = useState<DeudaMia[]>([]);
   const [estado, setEstado] = useState<"cargando" | "listo" | "error">(
     "cargando",
   );
   const [sheet, setSheet] = useState<
-    { modo: "nuevo" } | { modo: "editar"; d: DeudaAFavor } | null
+    { modo: "nuevo" } | { modo: "editar"; d: DeudaMia } | null
   >(autoNuevo ? { modo: "nuevo" } : null);
-  const [borrar, setBorrar] = useState<DeudaAFavor | null>(null);
+  const [borrar, setBorrar] = useState<DeudaMia | null>(null);
   const [proc, setProc] = useState(false);
 
   const cargar = useCallback(async () => {
     try {
-      setDeudas(await fetchDeudas());
+      setDeudas(await CONFIG[lado].fetch());
       setEstado("listo");
     } catch {
       setEstado("error");
     }
-  }, []);
+  }, [lado]);
 
   useEffect(() => {
     cargar();
@@ -162,7 +208,7 @@ export default function MeDebenVista({
   return (
     <div>
       <PageHeader
-        title="Me deben"
+        title={cfg.titulo}
         right={
           <button
             type="button"
@@ -175,16 +221,16 @@ export default function MeDebenVista({
         }
       />
 
+      {selector}
+
       {estado === "error" && (
-        <p className="text-sm text-red-600">
-          No se pudieron cargar las deudas a favor.
-        </p>
+        <p className="text-sm text-red-600">{cfg.errorCarga}</p>
       )}
 
       {estado === "listo" && (
         <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Total pendiente
+            {cfg.totalLabel}
           </p>
           <Money
             value={totalMeDeben(deudas)}
@@ -196,7 +242,7 @@ export default function MeDebenVista({
       <div className="space-y-2">
         {estado === "listo" && deudas.length === 0 && (
           <EmptyState
-            title="No hay deudas pendientes"
+            title={cfg.vacioTitulo}
             hint="Tocá Agregar para registrar una."
           />
         )}
@@ -254,17 +300,19 @@ export default function MeDebenVista({
       <BottomSheet
         open={sheet !== null}
         onClose={() => setSheet(null)}
-        title={sheet?.modo === "editar" ? "Editar" : "Nueva deuda a favor"}
+        title={sheet?.modo === "editar" ? "Editar" : cfg.sheetNuevo}
       >
         {sheet && (
           <DeudaForm
             inicial={sheet.modo === "editar" ? sheet.d : undefined}
+            personaLabel={cfg.personaLabel}
+            personaPlaceholder={cfg.personaPlaceholder}
             onCancelar={() => setSheet(null)}
             onGuardar={async (datos) => {
               if (sheet.modo === "editar") {
-                await updateDeuda(sheet.d.id, datos);
+                await cfg.update(sheet.d.id, datos);
               } else {
-                await insertDeuda(datos);
+                await cfg.insert(datos);
               }
               setSheet(null);
               await cargar();
@@ -284,7 +332,7 @@ export default function MeDebenVista({
           if (!borrar) return;
           setProc(true);
           try {
-            await deleteDeuda(borrar.id);
+            await cfg.remove(borrar.id);
             setBorrar(null);
             await cargar();
           } finally {

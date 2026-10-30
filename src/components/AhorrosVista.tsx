@@ -93,8 +93,11 @@ function CuentaForm({
 
 export default function AhorrosVista({
   autoNuevo = false,
+  selector,
 }: {
   autoNuevo?: boolean;
+  /** Selector (Cuentas | Fondo de emergencia) que se muestra bajo el encabezado. */
+  selector?: React.ReactNode;
 }) {
   const [ahorros, setAhorros] = useState<Ahorro[]>([]);
   const [estado, setEstado] = useState<"cargando" | "listo" | "error">(
@@ -135,6 +138,8 @@ export default function AhorrosVista({
           </button>
         }
       />
+
+      {selector}
 
       {estado === "error" && (
         <p className="text-sm text-red-600">No se pudieron cargar los ahorros.</p>

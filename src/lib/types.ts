@@ -66,6 +66,28 @@ export type NuevaDeudaAFavor = Pick<
   "persona" | "concepto" | "monto" | "estado"
 >;
 
+// --- Yo debo (deudas mías con otras personas; misma forma que "Me deben") ---
+export type DeudaMia = Omit<DeudaAFavor, "periodo_id">;
+export type NuevaDeudaMia = NuevaDeudaAFavor;
+
+// --- Fondo de emergencia (aportes + gastos; saldo = aportes - gastos) ------
+export type TipoFondo = "aporte" | "gasto";
+
+export interface FondoMovimiento {
+  id: string;
+  tipo: TipoFondo;
+  concepto: string;
+  monto: number;
+  fecha: string; // ISO "YYYY-MM-DD"
+  created_at: string;
+  updated_at: string;
+}
+
+export type NuevoFondoMovimiento = Pick<
+  FondoMovimiento,
+  "tipo" | "concepto" | "monto" | "fecha"
+>;
+
 // --- Ahorros (cuentas de ahorro / inversión, saldo acumulado real) ---------
 export interface Ahorro {
   id: string;

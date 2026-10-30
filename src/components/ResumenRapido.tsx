@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, PiggyBank, CreditCard, HandCoins } from "lucide-react";
+import {
+  ChevronRight,
+  PiggyBank,
+  CreditCard,
+  HandCoins,
+  Wallet,
+} from "lucide-react";
 import {
   fetchAhorros,
   fetchTarjetas,
   fetchTarjetaMovimientos,
   fetchDeudas,
+  fetchDeudasMias,
 } from "@/lib/queries";
 import { totalAhorros, totalMeDeben, deudaTarjeta } from "@/lib/calc";
 import Money from "./Money";
@@ -16,9 +23,10 @@ interface Totales {
   ahorros: number;
   deudaTarjetas: number;
   meDeben: number;
+  yoDebo: number;
 }
 
-/** 3 tarjetas de acceso rápido en Inicio: Ahorros, Tarjetas, Me deben. */
+/** Tarjetas de acceso rápido en Inicio: Ahorros, Tarjetas, Me deben, Yo debo. */
 export default function ResumenRapido() {
   const [t, setT] = useState<Totales | null>(null);
 
@@ -29,8 +37,10 @@ export default function ResumenRapido() {
       fetchTarjetas(),
       fetchTarjetaMovimientos(),
       fetchDeudas(),
+      // Si la tabla aún no existe (migración 006 pendiente) no rompe las demás filas.
+      fetchDeudasMias().catch(() => []),
     ])
-      .then(([ahorros, tarjetas, tmovs, deudas]) => {
+      .then(([ahorros, tarjetas, tmovs, deudas, mias]) => {
         if (!activo) return;
         const deudaTarjetas = tarjetas.reduce(
           (acc, tar) =>
@@ -41,9 +51,14 @@ export default function ResumenRapido() {
           ahorros: totalAhorros(ahorros),
           deudaTarjetas,
           meDeben: totalMeDeben(deudas),
+          yoDebo: totalMeDeben(mias),
         });
       })
-      .catch(() => activo && setT({ ahorros: 0, deudaTarjetas: 0, meDeben: 0 }));
+      .catch(
+        () =>
+          activo &&
+          setT({ ahorros: 0, deudaTarjetas: 0, meDeben: 0, yoDebo: 0 }),
+      );
     return () => {
       activo = false;
     };
@@ -69,6 +84,13 @@ export default function ResumenRapido() {
       icon: HandCoins,
       label: "Me deben",
       valor: t?.meDeben ?? null,
+      sub: "Pendiente",
+    },
+    {
+      href: "/me-deben?lado=yo-debo",
+      icon: Wallet,
+      label: "Yo debo",
+      valor: t?.yoDebo ?? null,
       sub: "Pendiente",
     },
   ];

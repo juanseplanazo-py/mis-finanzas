@@ -1,14 +1,17 @@
-import AhorrosVista from "@/components/AhorrosVista";
+import AhorrosPantalla from "@/components/AhorrosPantalla";
 
 export default async function AhorrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ nuevo?: string }>;
+  searchParams: Promise<{ nuevo?: string; vista?: string }>;
 }) {
-  const { nuevo } = await searchParams;
+  const { nuevo, vista } = await searchParams;
   return (
     <main>
-      <AhorrosVista autoNuevo={nuevo === "1"} />
+      <AhorrosPantalla
+        vistaInicial={vista === "fondo" ? "fondo" : "cuentas"}
+        autoNuevo={nuevo === "1"}
+      />
     </main>
   );
 }

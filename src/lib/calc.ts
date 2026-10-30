@@ -87,6 +87,23 @@ export function totalMeDeben(
   );
 }
 
+// ===== Fondo de emergencia ===============================================
+
+export interface ResumenFondo {
+  aportado: number;
+  gastado: number;
+  /** Aportado - Gastado: lo que le queda al fondo. */
+  saldo: number;
+}
+
+export function resumenFondo(
+  movs: { tipo: "aporte" | "gasto"; monto: number }[],
+): ResumenFondo {
+  const aportado = suma(movs.filter((m) => m.tipo === "aporte").map((m) => m.monto));
+  const gastado = suma(movs.filter((m) => m.tipo === "gasto").map((m) => m.monto));
+  return { aportado, gastado, saldo: aportado - gastado };
+}
+
 /** SUMA de los montos de un detalle de gastos. */
 export function sumaDetalles(detalles: { monto: number }[]): number {
   return suma(detalles.map((d) => d.monto));

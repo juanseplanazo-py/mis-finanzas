@@ -8,6 +8,10 @@ import type {
   NuevoMovimientoDetalle,
   DeudaAFavor,
   NuevaDeudaAFavor,
+  DeudaMia,
+  NuevaDeudaMia,
+  FondoMovimiento,
+  NuevoFondoMovimiento,
   Ahorro,
   NuevoAhorro,
   TarjetaCredito,
@@ -359,5 +363,72 @@ export async function updateDeuda(
 
 export async function deleteDeuda(id: string): Promise<void> {
   const { error } = await supabase.from("deudas_a_favor").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ===== Yo debo =============================================================
+
+export async function fetchDeudasMias(): Promise<DeudaMia[]> {
+  const { data, error } = await supabase
+    .from("deudas_mias")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as DeudaMia[]) ?? [];
+}
+
+export async function insertDeudaMia(d: NuevaDeudaMia): Promise<void> {
+  const { error } = await supabase.from("deudas_mias").insert(d);
+  if (error) throw error;
+}
+
+export async function updateDeudaMia(
+  id: string,
+  d: NuevaDeudaMia,
+): Promise<void> {
+  const { error } = await supabase.from("deudas_mias").update(d).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteDeudaMia(id: string): Promise<void> {
+  const { error } = await supabase.from("deudas_mias").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ===== Fondo de emergencia =================================================
+
+export async function fetchFondoMovimientos(): Promise<FondoMovimiento[]> {
+  const { data, error } = await supabase
+    .from("fondo_movimientos")
+    .select("*")
+    .order("fecha", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as FondoMovimiento[]) ?? [];
+}
+
+export async function insertFondoMovimiento(
+  m: NuevoFondoMovimiento,
+): Promise<void> {
+  const { error } = await supabase.from("fondo_movimientos").insert(m);
+  if (error) throw error;
+}
+
+export async function updateFondoMovimiento(
+  id: string,
+  m: NuevoFondoMovimiento,
+): Promise<void> {
+  const { error } = await supabase
+    .from("fondo_movimientos")
+    .update(m)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteFondoMovimiento(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("fondo_movimientos")
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
