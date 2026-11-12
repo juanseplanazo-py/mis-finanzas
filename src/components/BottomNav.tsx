@@ -5,21 +5,32 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   Receipt,
-  CreditCard,
+  TrendingUp,
   PiggyBank,
-  HandCoins,
+  Ellipsis,
   type LucideIcon,
 } from "lucide-react";
 
-const items: { href: string; label: string; icon: LucideIcon }[] = [
+const items: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Rutas que también dejan activa la pestaña. */
+  tambien?: string[];
+}[] = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/gastos", label: "Gastos", icon: Receipt },
-  { href: "/tarjetas", label: "Tarjetas", icon: CreditCard },
+  { href: "/analisis", label: "Análisis", icon: TrendingUp },
   { href: "/ahorros", label: "Ahorros", icon: PiggyBank },
-  { href: "/me-deben", label: "Me deben", icon: HandCoins },
+  {
+    href: "/mas",
+    label: "Más",
+    icon: Ellipsis,
+    tambien: ["/tarjetas", "/me-deben"],
+  },
 ];
 
-function esActiva(pathname: string, href: string): boolean {
+function coincide(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
 }
@@ -30,8 +41,10 @@ export default function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex w-full max-w-2xl">
-        {items.map(({ href, label, icon: Icon }) => {
-          const activa = esActiva(pathname, href);
+        {items.map(({ href, label, icon: Icon, tambien }) => {
+          const activa =
+            coincide(pathname, href) ||
+            (tambien ?? []).some((h) => coincide(pathname, h));
           return (
             <li key={href} className="flex-1">
               <Link

@@ -1,4 +1,6 @@
-import AhorrosPantalla from "@/components/AhorrosPantalla";
+import AhorrosPantalla, {
+  type VistaAhorros,
+} from "@/components/AhorrosPantalla";
 
 export default async function AhorrosPage({
   searchParams,
@@ -6,12 +8,11 @@ export default async function AhorrosPage({
   searchParams: Promise<{ nuevo?: string; vista?: string }>;
 }) {
   const { nuevo, vista } = await searchParams;
+  const vistaInicial: VistaAhorros =
+    vista === "fondo" || vista === "metas" ? vista : "cuentas";
   return (
     <main>
-      <AhorrosPantalla
-        vistaInicial={vista === "fondo" ? "fondo" : "cuentas"}
-        autoNuevo={nuevo === "1"}
-      />
+      <AhorrosPantalla vistaInicial={vistaInicial} autoNuevo={nuevo === "1"} />
     </main>
   );
 }

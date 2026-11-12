@@ -12,6 +12,8 @@ import type {
   NuevaDeudaMia,
   FondoMovimiento,
   NuevoFondoMovimiento,
+  MetaAhorro,
+  NuevaMetaAhorro,
   Ahorro,
   NuevoAhorro,
   TarjetaCredito,
@@ -38,6 +40,17 @@ export async function updateIngreso(
   const { error } = await supabase
     .from("periodos")
     .update({ ingreso })
+    .eq("id", periodoId);
+  if (error) throw error;
+}
+
+export async function updateAhorroReservado(
+  periodoId: string,
+  ahorro_reservado: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from("periodos")
+    .update({ ahorro_reservado })
     .eq("id", periodoId);
   if (error) throw error;
 }
@@ -392,6 +405,36 @@ export async function updateDeudaMia(
 
 export async function deleteDeudaMia(id: string): Promise<void> {
   const { error } = await supabase.from("deudas_mias").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ===== Metas de ahorro =====================================================
+
+export async function fetchMetas(): Promise<MetaAhorro[]> {
+  const { data, error } = await supabase
+    .from("metas_ahorro")
+    .select("*")
+    .eq("archivada", false)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as MetaAhorro[]) ?? [];
+}
+
+export async function insertMeta(m: NuevaMetaAhorro): Promise<void> {
+  const { error } = await supabase.from("metas_ahorro").insert(m);
+  if (error) throw error;
+}
+
+export async function updateMeta(
+  id: string,
+  m: NuevaMetaAhorro,
+): Promise<void> {
+  const { error } = await supabase.from("metas_ahorro").update(m).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteMeta(id: string): Promise<void> {
+  const { error } = await supabase.from("metas_ahorro").delete().eq("id", id);
   if (error) throw error;
 }
 

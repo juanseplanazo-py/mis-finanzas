@@ -3,34 +3,34 @@
 import { useState } from "react";
 import AhorrosVista from "./AhorrosVista";
 import FondoVista from "./FondoVista";
+import MetasVista from "./MetasVista";
 import Segmentado from "./Segmentado";
 
-type Vista = "cuentas" | "fondo";
+export type VistaAhorros = "cuentas" | "fondo" | "metas";
 
-/** Pestaña "Ahorros" con selector Cuentas | Fondo de emergencia. */
+/** Pestaña "Ahorros" con selector Cuentas | Fondo de emergencia | Metas. */
 export default function AhorrosPantalla({
   vistaInicial = "cuentas",
   autoNuevo = false,
 }: {
-  vistaInicial?: Vista;
+  vistaInicial?: VistaAhorros;
   autoNuevo?: boolean;
 }) {
-  const [vista, setVista] = useState<Vista>(vistaInicial);
+  const [vista, setVista] = useState<VistaAhorros>(vistaInicial);
 
   const selector = (
-    <Segmentado<Vista>
+    <Segmentado<VistaAhorros>
       opciones={[
         { key: "cuentas", label: "Cuentas" },
-        { key: "fondo", label: "Fondo de emergencia" },
+        { key: "fondo", label: "Fondo" },
+        { key: "metas", label: "Metas" },
       ]}
       valor={vista}
       onChange={setVista}
     />
   );
 
-  return vista === "fondo" ? (
-    <FondoVista selector={selector} />
-  ) : (
-    <AhorrosVista autoNuevo={autoNuevo} selector={selector} />
-  );
+  if (vista === "fondo") return <FondoVista selector={selector} />;
+  if (vista === "metas") return <MetasVista selector={selector} />;
+  return <AhorrosVista autoNuevo={autoNuevo} selector={selector} />;
 }

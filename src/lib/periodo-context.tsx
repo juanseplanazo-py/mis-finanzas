@@ -12,6 +12,7 @@ import {
   fetchPeriodos,
   fetchMovimientos,
   updateIngreso,
+  updateAhorroReservado,
   deleteMovimiento,
   deletePeriodo,
 } from "./queries";
@@ -33,6 +34,7 @@ interface PeriodoCtx {
   seleccionarPeriodo: (id: string) => void;
   registrarPeriodoNuevo: (p: Periodo) => void;
   cambiarIngreso: (ingreso: number) => Promise<void>;
+  cambiarAhorroReservado: (monto: number) => Promise<void>;
   recargarMovimientos: () => Promise<void>;
   eliminarMovimiento: (id: string) => Promise<void>;
   eliminarPeriodo: (id: string) => Promise<void>;
@@ -128,6 +130,17 @@ export function PeriodoProvider({ children }: { children: React.ReactNode }) {
     [periodo],
   );
 
+  const cambiarAhorroReservado = useCallback(
+    async (monto: number) => {
+      if (!periodo) return;
+      await updateAhorroReservado(periodo.id, monto);
+      const upd = { ...periodo, ahorro_reservado: monto };
+      setPeriodo(upd);
+      setPeriodos((prev) => prev.map((p) => (p.id === upd.id ? upd : p)));
+    },
+    [periodo],
+  );
+
   const recargarMovimientos = useCallback(async () => {
     if (periodo) await cargarMovs(periodo);
   }, [periodo, cargarMovs]);
@@ -169,6 +182,7 @@ export function PeriodoProvider({ children }: { children: React.ReactNode }) {
         seleccionarPeriodo,
         registrarPeriodoNuevo,
         cambiarIngreso,
+        cambiarAhorroReservado,
         recargarMovimientos,
         eliminarMovimiento: eliminarMov,
         eliminarPeriodo,

@@ -4,10 +4,15 @@ export interface Periodo {
   fecha_inicio: string; // ISO "YYYY-MM-DD"
   fecha_fin: string; // ISO "YYYY-MM-DD"
   ingreso: number; // guaraníes, entero
+  /** Monto que se aparta para ahorrar al inicio del período (default 0). */
+  ahorro_reservado: number;
   created_at: string;
 }
 
-export type NuevoPeriodo = Omit<Periodo, "id" | "created_at">;
+export type NuevoPeriodo = Omit<
+  Periodo,
+  "id" | "created_at" | "ahorro_reservado"
+> & { ahorro_reservado?: number };
 
 export interface Movimiento {
   id: string;
@@ -69,6 +74,26 @@ export type NuevaDeudaAFavor = Pick<
 // --- Yo debo (deudas mías con otras personas; misma forma que "Me deben") ---
 export type DeudaMia = Omit<DeudaAFavor, "periodo_id">;
 export type NuevaDeudaMia = NuevaDeudaAFavor;
+
+// --- Metas de ahorro (el progreso se lee del saldo vinculado) --------------
+export type OrigenMeta = "fondo" | "cuenta";
+
+export interface MetaAhorro {
+  id: string;
+  nombre: string;
+  monto_meta: number;
+  fecha_objetivo: string | null; // ISO "YYYY-MM-DD"
+  origen: OrigenMeta;
+  ahorro_id: string | null; // cuenta de Ahorros (si origen = "cuenta")
+  archivada: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type NuevaMetaAhorro = Pick<
+  MetaAhorro,
+  "nombre" | "monto_meta" | "fecha_objetivo" | "origen" | "ahorro_id"
+>;
 
 // --- Fondo de emergencia (aportes + gastos; saldo = aportes - gastos) ------
 export type TipoFondo = "aporte" | "gasto";

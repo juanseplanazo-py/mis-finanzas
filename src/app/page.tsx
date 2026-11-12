@@ -10,6 +10,7 @@ import IngresoEditable from "@/components/IngresoEditable";
 import KpiCard from "@/components/KpiCard";
 import Money from "@/components/Money";
 import ResumenRapido from "@/components/ResumenRapido";
+import MetaPrincipal from "@/components/MetaPrincipal";
 import PrivacyToggle from "@/components/PrivacyToggle";
 
 export default function InicioPage() {
@@ -98,6 +99,8 @@ function Contenido() {
           </p>
         </div>
       </div>
+
+      <MetaPrincipal />
 
       <section>
         <h2 className="mb-2 px-1 text-sm font-semibold uppercase tracking-wide text-slate-500">

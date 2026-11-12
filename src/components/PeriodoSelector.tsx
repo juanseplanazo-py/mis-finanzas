@@ -91,6 +91,9 @@ export default function PeriodoSelector({
           fecha_inicio: inicioSugDup,
           fecha_fin: finSugDup,
           ingreso: seleccionado.ingreso,
+          ...(seleccionado.ahorro_reservado > 0
+            ? { ahorro_reservado: seleccionado.ahorro_reservado }
+            : {}),
         },
         seleccionado.id,
       );
